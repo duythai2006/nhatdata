@@ -1,4 +1,5 @@
 ﻿import sys
+from io import BytesIO
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -6,6 +7,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import streamlit as st
+import pandas as pd
 
 from src.data_audit import build_audit_summary
 from src.financial_pipeline import build_company_snapshot
@@ -21,6 +23,13 @@ st.title("Investment Research Copilot")
 st.caption("Ticker → financial data → audit → thesis → valuation")
 
 ticker = st.text_input("Mã cổ phiếu", placeholder="Ví dụ: PVS")
+
+
+def dataframe_to_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Financial data")
+    return output.getvalue()
 
 if st.button("Bắt đầu Research"):
     if not ticker:
@@ -44,12 +53,24 @@ if st.button("Bắt đầu Research"):
             st.info("Không có metric nào được trích xuất từ dữ liệu nguồn.")
         else:
             st.dataframe(snapshot["summary"], use_container_width=True)
+            st.download_button(
+                "Tải metrics CSV",
+                snapshot["summary"].to_csv(index=False).encode("utf-8-sig"),
+                file_name=f"{ticker}_metrics.csv",
+                mime="text/csv",
+            )
 
         st.subheader("2) Data Audit")
         if audit["issues"].empty:
             st.success("Không có issue nào phát hiện được trong dữ liệu đã parse.")
         else:
             st.dataframe(audit["issues"], use_container_width=True)
+            st.download_button(
+                "Tải audit CSV",
+                audit["issues"].to_csv(index=False).encode("utf-8-sig"),
+                file_name=f"{ticker}_audit.csv",
+                mime="text/csv",
+            )
 
         st.subheader("3) Thesis Framework")
         st.write(thesis["thesis"])
@@ -71,3 +92,18 @@ if st.button("Bắt đầu Research"):
             if df is not None and not df.empty:
                 st.markdown(f"**{report_name}**")
                 st.markdown(report_to_html(df), unsafe_allow_html=True)
+                download_col1, download_col2 = st.columns(2)
+                download_col1.download_button(
+                    "Tải CSV",
+                    df.to_csv(index=False).encode("utf-8-sig"),
+                    file_name=f"{ticker}_{report_name}.csv",
+                    mime="text/csv",
+                    key=f"{report_name}_csv",
+                )
+                download_col2.download_button(
+                    "Tải Excel",
+                    dataframe_to_excel(df),
+                    file_name=f"{ticker}_{report_name}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"{report_name}_xlsx",
+                )
