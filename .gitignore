@@ -1,0 +1,36 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python environments and generated files
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Streamlit and local tooling
+.streamlit/secrets.toml
+.vscode/
+
+# Local databases, caches, and generated exports
+*.db
+*.sqlite
+*.sqlite3
+*.parquet
+output/*
+data/raw/*
+data/processed/*
+*.tmp
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
